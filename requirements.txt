@@ -1,0 +1,3 @@
+peewee
+numpy
+rerun-sdk
