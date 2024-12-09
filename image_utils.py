@@ -2,12 +2,7 @@ from PIL import Image
 import io
 import numpy as np
 
-def load_image(image_path):
-    
-    return Image.open(image_path)
-
-
-def decode_depth_image(byte_sequence: str):
+def __decode_depth_image(byte_sequence: str):
         
     image = Image.open(io.BytesIO(byte_sequence))
     
@@ -30,3 +25,21 @@ def decode_depth_image(byte_sequence: str):
     image = np.frombuffer(depth_bytes, dtype=np.float32)
     
     return image.reshape(h, w)
+
+def extract_depth_images(data: list) -> list:
+    
+    depth_images = [__decode_depth_image(d.depth) for d in data]
+    
+    depth_images = np.array(depth_images)
+    
+    return depth_images
+
+def extract_images(data: list) -> list:
+    
+    images = [io.BytesIO(d.image) for d in data]
+    
+    images = [Image.open(image) for image in images]
+    
+    images = np.asarray(images)
+    
+    return images
