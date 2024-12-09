@@ -1,3 +1,4 @@
 peewee
 numpy
 rerun-sdk
+open3d

@@ -2,6 +2,15 @@ from PIL import Image
 import io
 import numpy as np
 
+def decode_array(x: str, dtype=np.float32, shape=None) -> np.ndarray:
+    
+    pose = np.frombuffer(bytearray(x), dtype=dtype)
+    
+    if shape is not None:
+        pose = pose.reshape(shape)
+    
+    return pose
+
 def __decode_depth_image(byte_sequence: str):
         
     image = Image.open(io.BytesIO(byte_sequence))
