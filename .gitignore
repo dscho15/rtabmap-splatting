@@ -4,3 +4,6 @@
 *.jpeg
 *.ply
 *__pycache__*
+*cache*
+*pyc*
+__pycache__/database_utils.cpython-310.pyc
