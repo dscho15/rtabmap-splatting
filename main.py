@@ -19,7 +19,7 @@ PATH_TO_DB = "data/241102-23114 PM.db"
  
 db = RTABSQliteDatabase(PATH_TO_DB)
 
-poses = db.extract_data_poses()
+opt_poses = db.extract_opt_poses()
 rgb_images = db.extract_images()
 depth_images = db.extract_depth_images()
  

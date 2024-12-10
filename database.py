@@ -174,6 +174,23 @@ class RTABSQliteDatabase:
         class BaseModel(Model):
             class Meta:
                 database = self.db
+                
+        class Admin(BaseModel):
+            version = TextField(primary_key=True)
+            preview_image = BlobField()
+            opt_cloud = BlobField()
+            opt_ids = BlobField()
+            opt_poses = BlobField()
+            opt_last_localization = BlobField()
+            opt_polygons_size = IntegerField()
+            opt_polygons = BlobField()
+            opt_tex_coords = BlobField()
+            opt_tex_materials = BlobField()
+            opt_map = BlobField()
+            opt_map_x_min = FloatField()
+            opt_map_y_min = FloatField()
+            opt_map_resolution = FloatField()
+            time_enter = DateTimeField(default=datetime.datetime.now)
 
         class Feature(BaseModel):
             node_id = IntegerField()
@@ -233,6 +250,7 @@ class RTABSQliteDatabase:
             "nodes": self.extract_rows_from_table(Node),
             "data": self.extract_rows_from_table(Data),
             "links": self.extract_rows_from_table(Link),
+            "admin": self.extract_rows_from_table(Admin),
         }
         
         self.camera = CameraDataReader()
@@ -246,6 +264,14 @@ class RTABSQliteDatabase:
 
     def close(self):
         self.db.close()
+        
+    def extract_opt_poses(self) -> np.ndarray:
+        opt_poses = self.data["admin"][0].opt_poses
+        opt_ids = self.data["admin"][0].opt_ids
+        
+        poses = decode_array(opt_poses, np.float32, shape=(-1, 3, 4))
+        
+        return poses
 
     def extract_data_poses(self) -> np.ndarray:
         poses = [
@@ -304,3 +330,5 @@ class RTABSQliteDatabase:
         depth_images = np.array(depth_images)
         
         return depth_images
+
+# RTABSQliteDatabase("data/241102-23114 PM.db")
