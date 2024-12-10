@@ -3,8 +3,8 @@ import numpy as np
 
 from PIL import Image
 
-from database_utils import RTABSQliteDatabase
-from o3d_interface import registration, tdsf_integration
+from database import RTABSQliteDatabase
+from o3d_utils import registration, scalable_tdsf_integration
 
 import open3d as o3d
 
@@ -49,8 +49,6 @@ result = registration(
 
 data_poses = db.extract_data_poses()
 
-volume = tdsf_integration(poses[:2], rgb_images[:2], depth_images[:2], K)
-
+volume = scalable_tdsf_integration(poses, rgb_images, depth_images, K)
 mesh = volume.extract_point_cloud()
-
 o3d.io.write_point_cloud("pointcloud.ply", mesh)

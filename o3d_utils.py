@@ -93,7 +93,7 @@ def load_camera_intrinsics_obj(width, height, fx, fy, cx, cy):
     return camera_intrinsics
 
 
-def tdsf_integration(
+def scalable_tdsf_integration(
     poses: np.ndarray,
     rgb_images: np.ndarray,
     depth_images: np.ndarray,

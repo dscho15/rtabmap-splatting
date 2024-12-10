@@ -10,7 +10,7 @@ from PIL import Image
 
 from camera_model import CameraModel
 from data_utils import extract_depth_images, extract_images
-from database_utils import RTABSQliteDatabase
+from database import RTABSQliteDatabase
 
 from PIL import Image
 
