@@ -9,6 +9,8 @@ from pathlib import Path
 from PIL import Image
 from tqdm import tqdm
 
+import zlib
+
 
 def decode_array(
     x: str, dtype: np.dtype = np.float32, shape: tuple = None
@@ -269,6 +271,8 @@ class RTABSQliteDatabase:
         opt_poses = self.data["admin"][0].opt_poses
         opt_ids = self.data["admin"][0].opt_ids
         
+        opt_poses = zlib.decompress(opt_poses)
+        
         poses = decode_array(opt_poses, np.float32, shape=(-1, 3, 4))
         
         return poses
@@ -331,4 +335,5 @@ class RTABSQliteDatabase:
         
         return depth_images
 
-# RTABSQliteDatabase("data/241102-23114 PM.db")
+db = RTABSQliteDatabase("data/241102-23114 PM.db")
+poses = db.extract_opt_poses()
