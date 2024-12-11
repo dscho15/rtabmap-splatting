@@ -2,6 +2,35 @@ import open3d as o3d
 import numpy as np
 from tqdm import tqdm
 
+def load_rgbd_as_point_cloud(
+    rgb_image: np.ndarray,
+    depth_image: np.ndarray,
+    K: np.ndarray,
+    depth_scale: float = 1000,
+):
+    
+    h, w = depth_image.shape[-2:]
+    fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
+    print(f"fx: {fx}, fy: {fy}, cx: {cx}, cy: {cy}, h: {h}, w: {w}")
+    
+    rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+        o3d.geometry.Image(rgb_image),
+        o3d.geometry.Image(depth_image),
+        depth_scale=depth_scale,
+        convert_rgb_to_intensity=False,
+    )
+    
+    pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
+        rgbd, 
+        load_camera_intrinsics_obj(w, h, fx, fy, cx, cy)
+    )
+    
+    return pcd
+
+
+def draw_geometry_list(geometry_list):
+    o3d.visualization.draw_geometries(geometry_list)
+
 
 def registration(
     src_img: np.ndarray,
@@ -9,7 +38,7 @@ def registration(
     src_depth: np.ndarray,
     target_depth: np.ndarray,
     K: np.ndarray,
-    depth_scale: float = 1,
+    depth_scale: float = 1000,
     initial_pose: np.ndarray = np.eye(4),
     radius_normal_est: float = 0.1,
     correspondence_distance: float = 0.025,
@@ -41,9 +70,16 @@ def registration(
     src_pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
         src_rgbd, load_camera_intrinsics_obj(w, h, fx, fy, cx, cy)
     )
+    
     target_pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
         target_rgbd, load_camera_intrinsics_obj(w, h, fx, fy, cx, cy)
     )
+    
+    src_pcd.paint_uniform_color([1, 0, 0])  # Red for source point cloud
+    target_pcd.paint_uniform_color([0, 0, 1])  # Blue for target point cloud
+    
+    # Visualize point clouds
+    o3d.visualization.draw_geometries([src_pcd, target_pcd])
 
     # Estimate normals
     src_pcd.estimate_normals(

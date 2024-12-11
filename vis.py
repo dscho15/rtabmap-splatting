@@ -12,16 +12,13 @@ from camera_model import CameraModel
 from data_utils import extract_depth_images, extract_images
 from dep.database import RTABSQliteDatabase
 
-from PIL import Image
-
-
 def resize_image(image: np.ndarray, size_hw: tuple) -> Image:
     image = Image.fromarray(image)
     image = image.resize(size_hw[::-1])
     return np.asarray(image)
 
 
-PATH_TO_DB = "/home/dts/rtabmap_interface/241102-23114 PM.db"
+PATH_TO_DB = "/home/daniel/Desktop/rtabmap-splatting/data/241102-23114 PM.db"
 
 db = RTABSQliteDatabase(PATH_TO_DB)
 

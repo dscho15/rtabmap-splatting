@@ -137,6 +137,10 @@ class RTABSQliteDatabase:
     @staticmethod
     def extract_rows_from_table(model):
         return list(model.select())
+    
+    def extract_opt_ids(self):
+        opt_ids = zlib.decompress(self.data['admin'][0].opt_ids)
+        return np.frombuffer(opt_ids, dtype=np.int32)
 
     def extract_opt_poses(self):
         opt_poses = zlib.decompress(self.data['admin'][0].opt_poses)

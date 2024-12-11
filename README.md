@@ -4,4 +4,6 @@
  
 rerun --web-viewer
 
+virtualenv myenv
 
+source myenv/bin/activate
