@@ -19,7 +19,7 @@ PATH_TO_DB = "data/241102-23114 PM.db"
  
 db = RTABSQliteDatabase(PATH_TO_DB)
 
-opt_poses = db.extract_opt_poses()
+poses = db.extract_opt_poses()
 rgb_images = db.extract_images()
 depth_images = db.extract_depth_images()
  
@@ -47,8 +47,12 @@ result = registration(
     debugging_save_pcd=True,
 )
 
-data_poses = db.extract_data_poses()
+poses = db.extract_opt_poses()
 
-volume = scalable_tdsf_integration(poses, rgb_images, depth_images, K)
+poses[1] = poses[0] @ np.linalg.inv(result)
+
+volume = scalable_tdsf_integration(poses[:2], rgb_images[:2], depth_images[:2], K)
+
 mesh = volume.extract_point_cloud()
+
 o3d.io.write_point_cloud("pointcloud.ply", mesh)

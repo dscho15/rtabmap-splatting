@@ -123,8 +123,10 @@ def scalable_tdsf_integration(
                 depth_trunc=4,
                 convert_rgb_to_intensity=False,
             ),
+            
             intrinsic=load_camera_intrinsics_obj(w, h, fx, fy, cx, cy),
-            extrinsic=pose,
+            
+            extrinsic=np.linalg.inv(pose),
         )
 
     return volume_obj

@@ -129,6 +129,8 @@ class RTABSQliteDatabase:
         class Data(BaseModel):
             id = IntegerField(primary_key=True)
             calibration = BlobField()
+            image = BlobField()
+            depth = BlobField()
 
         return {'admin': Admin, 'nodes': Node, 'links': Link, 'data': Data}
 
@@ -138,7 +140,10 @@ class RTABSQliteDatabase:
 
     def extract_opt_poses(self):
         opt_poses = zlib.decompress(self.data['admin'][0].opt_poses)
-        return decode_array(opt_poses, np.float32, shape=(-1, 3, 4))
+        opt_poses = decode_array(opt_poses, np.float32, shape=(-1, 3, 4))
+        zeros = np.zeros((len(opt_poses), 1, 4))
+        zeros[:, 0, 3] = 1
+        return np.hstack([opt_poses, zeros])
 
     def extract_data_poses(self):
         poses = [decode_array(node.pose, np.float32, (3, 4)) for node in self.data['nodes']]
@@ -156,9 +161,39 @@ class RTABSQliteDatabase:
                 decode_array(link.information_matrix, np.float64, (6, 6))
             )
         return data
+    
+    def extract_images(self) -> np.ndarray:
+        images = [io.BytesIO(d.image) for d in self.data["data"]]
+        images = [Image.open(image) for image in images]
+        images = np.asarray(images)
+        return images
 
-# Example Usage
-db = RTABSQliteDatabase("/home/dts/rtabmap_interface/data/241102-23114 PM.db")
-poses = db.extract_opt_poses()
-data_poses = db.extract_data_poses()
-links = db.extract_links()
+    def __decode_depth_image(self, byte_sequence: str):
+        image = Image.open(io.BytesIO(byte_sequence))
+        depth_image = np.array(image)
+
+        assert len(depth_image.shape) == 3, "Invalid image shape"
+        assert depth_image.shape[-1] == 4, "Invalid image channels"
+
+        h, w, c = depth_image.shape
+        depth_image = depth_image.reshape((h * w, c))
+
+        # decoding pattern (BGRA -> RGBA)
+        depth_image = depth_image[:, [2, 1, 0, 3]]
+        depth_image = depth_image.reshape(h, w, c)
+        depth_bytes = depth_image.tobytes()
+
+        image = np.frombuffer(depth_bytes, dtype=np.float32)
+        
+        return image.reshape(h, w)
+
+    def extract_depth_images(self) -> list:
+        depth_images = [self.__decode_depth_image(d.depth) for d in self.data["data"]]
+        depth_images = np.array(depth_images)
+        return depth_images
+
+# # Example Usage
+# db = RTABSQliteDatabase("/home/dts/rtabmap_interface/data/241102-23114 PM.db")
+# poses = db.extract_opt_poses()
+# data_poses = db.extract_data_poses()
+# links = db.extract_links()
