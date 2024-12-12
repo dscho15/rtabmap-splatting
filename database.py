@@ -1,4 +1,4 @@
-from peewee import *
+from peewee import SqliteDatabase, Model, TextField, BlobField, DateTimeField, IntegerField
 
 import datetime
 import numpy as np
@@ -14,8 +14,8 @@ from tqdm import tqdm
 from typing import Optional, Union
 
 # Helper Functions
-def decode_array(x: str, dtype: np.dtype = np.float32, shape: Optional[tuple] = None) -> np.ndarray:
-    array = np.frombuffer(bytearray(x), dtype)
+def decode_array(x: bytes, dtype: Union[np.dtype, str] = np.dtype(np.float32), shape: Optional[tuple] = None) -> np.ndarray:
+    array = np.frombuffer(x, dtype=dtype)
     return array.reshape(shape) if shape else array
 
 # LinkData Class
@@ -53,7 +53,7 @@ class CameraDataReader:
         self.D = None  # Distortion coefficients
         self.R = None  # Rotation matrix
         self.P = None  # Projection matrix
-        self.local_transform = None  # Local transform
+        self.L = np.eye(3, 4)  # Additional matrix L
         self.image_size = (0, 0)  # Width, Height
 
     def deserialize_calibration(self, data):
@@ -149,25 +149,25 @@ class RTABSQliteDatabase:
 
     def extract_opt_poses(self):
         opt_poses = zlib.decompress(self.data['admin'][0].opt_poses)
-        opt_poses = decode_array(opt_poses, np.float32, shape=(-1, 3, 4))
-        zeros = np.zeros((len(opt_poses), 1, 4))
-        zeros[:, 0, 3] = 1
-        return np.hstack([opt_poses, zeros])
+        
+        opt_poses = decode_array(opt_poses, np.dtype(np.float32), shape=(-1, 3, 4))
+        
+        opt_poses = np.array([np.vstack([pose, np.array([[0., 0., 0., 1.]])]) for pose in opt_poses])
 
-    def extract_data_poses(self):
-        poses = [decode_array(node.pose, np.float32, (3, 4)) for node in self.data['nodes']]
-        zeros = np.zeros((len(poses), 1, 4))
-        zeros[:, 0, 3] = 1
-        return np.hstack([poses, zeros])
+        # L = np.vstack((self.camera.L, np.array([0, 0, 0, 1])))
+
+        # opt_poses = np.array([pose @ L for pose in opt_poses])
+
+        return opt_poses
 
     def extract_links(self):
         data = LinkData()
         for link in tqdm(self.data['links']):
             data.add_link(
-                decode_array(link.transform, np.float32, (3, 4)),
+                decode_array(link.transform, np.dtype(np.float32), (3, 4)),
                 link.from_id,
                 link.to_id,
-                decode_array(link.information_matrix, np.float64, (6, 6))
+                decode_array(link.information_matrix, np.dtype(np.float64), (6, 6))
             )
         return data
     
@@ -177,7 +177,7 @@ class RTABSQliteDatabase:
         images = np.asarray(images)
         return images
 
-    def __decode_depth_image(self, byte_sequence: str):
+    def __decode_depth_image(self, byte_sequence: bytes):
         image = Image.open(io.BytesIO(byte_sequence))
         depth_image = np.array(image)
 
@@ -196,7 +196,7 @@ class RTABSQliteDatabase:
         
         return image.reshape(h, w)
 
-    def extract_depth_images(self) -> list[np.ndarray]:
+    def extract_depth_images(self) -> np.ndarray:
     
         depth_images = [self.__decode_depth_image(d.depth) for d in self.data["data"]]
         depth_images = np.array(depth_images)
@@ -205,11 +205,10 @@ class RTABSQliteDatabase:
     
 
 # # Example Usage
-db = RTABSQliteDatabase("databases/241211-32334 PM.db")
-poses = db.extract_opt_poses()
-data_poses = db.extract_data_poses()
-links = db.extract_links()
+# db = RTABSQliteDatabase("databases/241211-32334 PM.db")
+# poses = db.extract_opt_poses()
+# links = db.extract_links()
 
-depth_images = db.extract_depth_images()
-d_img_1 = depth_images[0]
-d_img_1[0, 0]
+# depth_images = db.extract_depth_images()
+# d_img_1 = depth_images[0]
+# d_img_1[0, 0]

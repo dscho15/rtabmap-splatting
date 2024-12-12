@@ -166,3 +166,12 @@ def scalable_tdsf_integration(
         )
 
     return volume_obj
+
+#pc1 = load_rgbd_as_point_cloud(rgb_images[0], depth_images[0], K, 1)
+# pc2 = load_rgbd_as_point_cloud(rgb_images[1], depth_images[1], K, 1)
+
+# pose_1 = poses[0] @ L
+# pose_2 = poses[1] @ L
+
+# pc1.transform(pose_1)
+# pc2.transform(pose_2)
