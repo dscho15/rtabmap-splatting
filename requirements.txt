@@ -1,4 +1,6 @@
 peewee
 numpy
 rerun-sdk
-open3d
+open3d-cpu
+pillow
+tqdm

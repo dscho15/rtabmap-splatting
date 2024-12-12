@@ -1,16 +1,21 @@
 from peewee import *
+
 import datetime
 import numpy as np
 import io
 import struct
 import zlib
+
 from pathlib import Path
 from PIL import Image
 from tqdm import tqdm
 
+# optional
+from typing import Optional, Union
+
 # Helper Functions
-def decode_array(x: str, dtype: np.dtype = np.float32, shape: tuple = None) -> np.ndarray:
-    array = np.frombuffer(bytearray(x), dtype=dtype)
+def decode_array(x: str, dtype: np.dtype = np.float32, shape: Optional[tuple] = None) -> np.ndarray:
+    array = np.frombuffer(bytearray(x), dtype)
     return array.reshape(shape) if shape else array
 
 # LinkData Class
@@ -191,13 +196,20 @@ class RTABSQliteDatabase:
         
         return image.reshape(h, w)
 
-    def extract_depth_images(self) -> list:
+    def extract_depth_images(self) -> list[np.ndarray]:
+    
         depth_images = [self.__decode_depth_image(d.depth) for d in self.data["data"]]
         depth_images = np.array(depth_images)
+    
         return depth_images
+    
 
 # # Example Usage
-# db = RTABSQliteDatabase("/home/dts/rtabmap_interface/data/241102-23114 PM.db")
-# poses = db.extract_opt_poses()
-# data_poses = db.extract_data_poses()
-# links = db.extract_links()
+db = RTABSQliteDatabase("databases/241211-32334 PM.db")
+poses = db.extract_opt_poses()
+data_poses = db.extract_data_poses()
+links = db.extract_links()
+
+depth_images = db.extract_depth_images()
+d_img_1 = depth_images[0]
+d_img_1[0, 0]
