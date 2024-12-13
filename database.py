@@ -145,20 +145,16 @@ class RTABSQliteDatabase:
     
     def extract_opt_ids(self):
         opt_ids = zlib.decompress(self.data['admin'][0].opt_ids)
-        return np.frombuffer(opt_ids, dtype=np.int32)
+        opt_ids = np.frombuffer(opt_ids, dtype=np.int32)
+        return np.asarray(opt_ids) - 1
 
     def extract_opt_poses(self):
-        opt_poses = zlib.decompress(self.data['admin'][0].opt_poses)
-        
-        opt_poses = decode_array(opt_poses, np.dtype(np.float32), shape=(-1, 3, 4))
-        
-        opt_poses = np.array([np.vstack([pose, np.array([[0., 0., 0., 1.]])]) for pose in opt_poses])
-
-        # L = np.vstack((self.camera.L, np.array([0, 0, 0, 1])))
-
-        # opt_poses = np.array([pose @ L for pose in opt_poses])
-
-        return opt_poses
+        poses = zlib.decompress(self.data['admin'][0].opt_poses)
+        poses = decode_array(poses, np.dtype(np.float32), shape=(-1, 3, 4))
+        poses = np.array([np.vstack([pose, np.array([[0., 0., 0., 1.]])]) for pose in poses])
+        local_transform = np.vstack((self.camera.L, np.array([0, 0, 0, 1])))
+        poses = np.array([pose @ local_transform for pose in poses])
+        return poses
 
     def extract_links(self):
         data = LinkData()

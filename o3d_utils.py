@@ -134,12 +134,17 @@ def scalable_tdsf_integration(
     rgb_images: np.ndarray,
     depth_images: np.ndarray,
     K: np.ndarray,
+    indices: np.ndarray = None,
     depth_scale: float = 1,
     voxel_length: float = 8 / 512.0,
     sdf_trunc: float = 8 / 512.0 * 3,
 ):
     h, w = depth_images.shape[-2:]
     fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
+    
+    if isinstance(indices, np.ndarray):
+        rgb_images = rgb_images[indices]
+        depth_images = depth_images[indices]
 
     volume_obj = o3d.pipelines.integration.ScalableTSDFVolume(
         voxel_length=voxel_length,
@@ -156,7 +161,7 @@ def scalable_tdsf_integration(
                 color=o3d.geometry.Image(img),
                 depth=o3d.geometry.Image(depth),
                 depth_scale=depth_scale,
-                depth_trunc=4,
+                depth_trunc=2.5,
                 convert_rgb_to_intensity=False,
             ),
             
