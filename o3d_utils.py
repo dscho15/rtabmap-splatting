@@ -2,29 +2,29 @@ import open3d as o3d
 import numpy as np
 from tqdm import tqdm
 
+
 def load_rgbd_as_point_cloud(
     rgb_image: np.ndarray,
     depth_image: np.ndarray,
     K: np.ndarray,
     depth_scale: float = 1000,
 ):
-    
+
     h, w = depth_image.shape[-2:]
     fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
     print(f"fx: {fx}, fy: {fy}, cx: {cx}, cy: {cy}, h: {h}, w: {w}")
-    
+
     rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
         o3d.geometry.Image(rgb_image),
         o3d.geometry.Image(depth_image),
         depth_scale=depth_scale,
         convert_rgb_to_intensity=False,
     )
-    
+
     pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
-        rgbd, 
-        load_camera_intrinsics_obj(w, h, fx, fy, cx, cy)
+        rgbd, load_camera_intrinsics_obj(w, h, fx, fy, cx, cy)
     )
-    
+
     return pcd
 
 
@@ -44,6 +44,7 @@ def registration(
     correspondence_distance: float = 0.025,
     n_max_iters: int = 2000,
     debugging_save_pcd: bool = False,
+    path_save_pcd: str = "debug_pointcloud.ply",
 ):
 
     h, w = src_depth.shape[-2:]
@@ -70,14 +71,14 @@ def registration(
     src_pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
         src_rgbd, load_camera_intrinsics_obj(w, h, fx, fy, cx, cy)
     )
-    
+
     target_pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
         target_rgbd, load_camera_intrinsics_obj(w, h, fx, fy, cx, cy)
     )
-    
+
     src_pcd.paint_uniform_color([1, 0, 0])  # Red for source point cloud
     target_pcd.paint_uniform_color([0, 0, 1])  # Blue for target point cloud
-    
+
     # Visualize point clouds
     o3d.visualization.draw_geometries([src_pcd, target_pcd])
 
@@ -115,7 +116,7 @@ def registration(
         src_pcd.transform(relative_pose)
 
         # save the point clouds in a single file
-        o3d.io.write_point_cloud("pointcloud.ply", src_pcd + target_pcd)
+        o3d.io.write_point_cloud(path_save_pcd, src_pcd + target_pcd)
 
     return registration_result.transformation
 
@@ -129,22 +130,25 @@ def load_camera_intrinsics_obj(width, height, fx, fy, cx, cy):
     return camera_intrinsics
 
 
+def extract_intrisics(K: np.ndarray) -> tuple[float]:
+
+    fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
+
+    return fx, fy, cx, cy
+
+
 def scalable_tdsf_integration(
     poses: np.ndarray,
     rgb_images: np.ndarray,
     depth_images: np.ndarray,
     K: np.ndarray,
-    indices: np.ndarray = None,
+    depth_trunc: float = 2.5,
     depth_scale: float = 1,
     voxel_length: float = 8 / 512.0,
     sdf_trunc: float = 8 / 512.0 * 3,
 ):
     h, w = depth_images.shape[-2:]
-    fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
-    
-    if isinstance(indices, np.ndarray):
-        rgb_images = rgb_images[indices]
-        depth_images = depth_images[indices]
+    fx, fy, cx, cy = extract_intrisics(K)
 
     volume_obj = o3d.pipelines.integration.ScalableTSDFVolume(
         voxel_length=voxel_length,
@@ -161,18 +165,17 @@ def scalable_tdsf_integration(
                 color=o3d.geometry.Image(img),
                 depth=o3d.geometry.Image(depth),
                 depth_scale=depth_scale,
-                depth_trunc=2.5,
+                depth_trunc=depth_trunc,
                 convert_rgb_to_intensity=False,
             ),
-            
             intrinsic=load_camera_intrinsics_obj(w, h, fx, fy, cx, cy),
-            
             extrinsic=np.linalg.inv(pose),
         )
 
     return volume_obj
 
-#pc1 = load_rgbd_as_point_cloud(rgb_images[0], depth_images[0], K, 1)
+
+# pc1 = load_rgbd_as_point_cloud(rgb_images[0], depth_images[0], K, 1)
 # pc2 = load_rgbd_as_point_cloud(rgb_images[1], depth_images[1], K, 1)
 
 # pose_1 = poses[0] @ L

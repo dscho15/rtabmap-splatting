@@ -12,6 +12,7 @@ from camera_model import CameraModel
 from data_utils import extract_depth_images, extract_images
 from dep.database import RTABSQliteDatabase
 
+
 def resize_image(image: np.ndarray, size_hw: tuple) -> Image:
     image = Image.fromarray(image)
     image = image.resize(size_hw[::-1])
