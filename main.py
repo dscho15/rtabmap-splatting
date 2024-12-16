@@ -49,6 +49,12 @@ def filter_depth_images(
     return depth_images
 
 
+def filter_colors(mesh_colors: np.ndarray, color: np.ndarray):
+    diff = (np.abs(mesh_colors - (color / 255.0))).sum(axis=-1)
+    indices = np.where(diff == 0.)[0]
+    return indices
+
+
 PATH_TO_DB = "/home/dts/rtabmap_interface/data/241102-23114 PM.db"
 
 db = RTABSQliteDatabase(PATH_TO_DB)
@@ -83,6 +89,11 @@ depth_images = filter_depth_images(rgb_images_l, depth_images, colors)
 rgb_images_l = rgb_images_l.astype(np.uint8)
 rgb_images_l = np.ascontiguousarray(rgb_images_l)
 
+# save images
+
+for i, rgb_image in enumerate(rgb_images_l):
+    Image.fromarray(rgb_image).save(f"data/imgs/rgb_{i}.png")
+
 # volume
 
 volume = scalable_tdsf_integration(
@@ -91,15 +102,20 @@ volume = scalable_tdsf_integration(
     depth_images,
     K,
     depth_scale=1,
-    voxel_length=8 / 512.0,
-    sdf_trunc=8 / 512.0 * 3,
+    voxel_length=16 / 512.0,
+    sdf_trunc=16 / 512.0 * 3,
 )
 
 mesh = volume.extract_point_cloud()
 o3d.io.write_point_cloud("pointcloud.ply", mesh)
 
 # extract colors and points from mesh
-mesh_colors = np.array(mesh.colors)
-mesh_points = np.array(mesh.points)
+mesh_colors = np.asarray(mesh.colors)
+mesh_points = np.asarray(mesh.points)
+
+# extract floor indices, e..g, index 3 of colors
+floor_indices = filter_colors(mesh_colors, colors[1])
+
+floor_points = mesh_points[floor_indices]
 
 plane_equation = extract_plane_from_pointcloud(mesh, 0.1)
