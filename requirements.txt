@@ -4,3 +4,6 @@ rerun-sdk
 open3d-cpu
 pillow
 tqdm
+torch
+torchvision
+distinctipy

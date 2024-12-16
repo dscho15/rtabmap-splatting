@@ -130,7 +130,7 @@ def load_camera_intrinsics_obj(width, height, fx, fy, cx, cy):
     return camera_intrinsics
 
 
-def extract_intrisics(K: np.ndarray) -> tuple[float]:
+def extract_intrisics(K: np.ndarray) -> tuple:
 
     fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
 
@@ -148,6 +148,7 @@ def scalable_tdsf_integration(
     sdf_trunc: float = 8 / 512.0 * 3,
 ):
     h, w = depth_images.shape[-2:]
+    
     fx, fy, cx, cy = extract_intrisics(K)
 
     volume_obj = o3d.pipelines.integration.ScalableTSDFVolume(

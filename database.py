@@ -245,17 +245,9 @@ class RTABSQliteDatabase:
         _, depth_h, depth_w = depth_images.shape
         _, rgb_h, rgb_w, _ = rgb_images.shape
 
-        rgb_images = np.asarray(
-            [resize_image(image, (depth_h, depth_w)) for image in rgb_images]
-        )
-
-        rgb_images = np.asarray(
-            [resize_image(image, (depth_h, depth_w)) for image in rgb_images]
-        )
-
         # camera intrinsics
         s = rgb_w / depth_w
-        K = self.camera.K.copy()
+        K = self.camera.K.copy() # type: ignore # 
         K = K / s
         K[2, 2] = 1
 
