@@ -202,7 +202,7 @@ class Segmentation2D:
         
         outputs = self.colors[outputs][0].permute(2, 0, 1)
         
-        outputs = resize(outputs, desired_res, interpolation=InterpolationMode.NEAREST)
+        outputs = resize(outputs, desired_res, interpolation=InterpolationMode.BILINEAR) # type: ignore
 
         outputs = outputs.permute(1, 2, 0)
                 

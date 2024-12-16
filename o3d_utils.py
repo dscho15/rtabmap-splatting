@@ -29,6 +29,7 @@ def load_rgbd_as_point_cloud(
 
 
 def draw_geometry_list(geometry_list):
+    
     o3d.visualization.draw_geometries(geometry_list)
 
 
@@ -137,6 +138,29 @@ def extract_intrisics(K: np.ndarray) -> tuple:
     return fx, fy, cx, cy
 
 
+def extract_plane_from_pointcloud(
+    pcd_np: np.ndarray | o3d.geometry.PointCloud, 
+    threshold: float = 0.01,
+    ransac_n: int = 3,
+    num_iterations: int = 1000):
+    
+    assert pcd_np.ndim == 2, "The point cloud must be a 2D array"
+    assert pcd_np.shape[1] == 3, "The point cloud must have 3 columns"
+    
+    pcd_np = np.ascontiguousarray(pcd_np)
+    
+    pcd = o3d.geometry.PointCloud()
+    
+    pcd.points = o3d.utility.Vector3dVector(pcd_np)
+    
+    plane_model, inliers = pcd.segment_plane(distance_threshold=threshold, ransac_n=ransac_n, num_iterations=num_iterations)
+    
+    # ensure inliers is 75% percent of the entire point cloud
+    if len(inliers) < 0.75 * len(pcd_np):
+        return None, None
+    else:
+        return plane_model, inliers
+
 def scalable_tdsf_integration(
     poses: np.ndarray,
     rgb_images: np.ndarray,
@@ -174,13 +198,3 @@ def scalable_tdsf_integration(
         )
 
     return volume_obj
-
-
-# pc1 = load_rgbd_as_point_cloud(rgb_images[0], depth_images[0], K, 1)
-# pc2 = load_rgbd_as_point_cloud(rgb_images[1], depth_images[1], K, 1)
-
-# pose_1 = poses[0] @ L
-# pose_2 = poses[1] @ L
-
-# pc1.transform(pose_1)
-# pc2.transform(pose_2)
